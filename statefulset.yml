@@ -16,6 +16,12 @@ spec:
       labels:
         app: mysql
     spec:
+      securityContext:
+        runAsNonRoot: true    #k8s will refuse to start it if it tries to become root
+        runAsUser: 999        #start directly as mysql user(UID:999)
+        runAsGroup: 999       
+        fsGroup: 999          # k8s will automatically chown of pvc /var/lib/mysql, /var/run/mysqld, /tmp --> to group 999 before mysql start so mysql doesn't need to do chown itself
+        seccompProfile: {type: RuntimeDefault}   #Block dangerous system calls, safe default
       containers:
         - name: mysql
           image: karkamprashanth/project1:db
@@ -58,6 +64,9 @@ spec:
               command: ["sh", "-c", "MYSQL_PWD=\"$MYSQL_ROOT_PASSWORD\" mysqladmin ping -h 127.0.0.1 -uroot --silent"]
             periodSeconds: 20
             timeoutSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: ["ALL"]}
           resources:
             requests:
               cpu: "300m"
